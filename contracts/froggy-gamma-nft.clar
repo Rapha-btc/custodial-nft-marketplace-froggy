@@ -379,35 +379,13 @@
     (map-set reserved-ids token-id true)
     (+ count u1)))
 
-;; Admin function to mint reserved IDs to a specific recipient (batch)
-(define-public (admin-mint-reserved (ids (list 25 uint)) (recipient principal))
-  (let
-    (
-      (current-balance (get-balance recipient))
-      (minted-count (fold mint-reserved-iter ids {recipient: recipient, count: u0}))
-    )
-    (asserts! (or (is-eq tx-sender (var-get artist-address)) (is-eq tx-sender DEPLOYER)) (err ERR-NOT-AUTHORIZED))
-    (map-set token-count recipient (+ current-balance (get count minted-count)))
-    (ok (get count minted-count))))
-
-(define-private (mint-reserved-iter (token-id uint) (state {recipient: principal, count: uint}))
-  (let
-    (
-      (recipient (get recipient state))
-      (count (get count state))
-    )
-    (if (and (is-reserved token-id) (is-none (nft-get-owner? froggy token-id)))
-      (begin
-        (unwrap! (nft-mint? froggy token-id recipient) state)
-        {recipient: recipient, count: (+ count u1)})
-      state)))
 
 ;; ========== DEPLOYMENT: RESERVE AND MINT TAKEN FROGGY IDS ==========
 ;; All 258 reserved IDs from takenfroggys.csv are set and minted on deployment
 ;; IDs are sorted in ascending order for readability
 
 (define-constant ADMIN_RECIPIENT 'SP3E8B51MF5E28BD82FM95VDSQ71VK4KFNZX7ZK2R)
-(define-constant MARKETPLACE .custodial-marketplace)
+(define-constant MARKETPLACE .froggy-nft-marketplace)
 
 ;; Reserved IDs batch 1 (200 IDs) - sorted ascending: 1-5891
 (define-constant RESERVED-BATCH-1 (list
@@ -547,7 +525,7 @@
 (define-constant PUBLIC-BATCH-48 (list u9645 u9646 u9647 u9648 u9649 u9650 u9652 u9653 u9654 u9655 u9656 u9657 u9658 u9659 u9660 u9661 u9662 u9663 u9664 u9665 u9666 u9667 u9668 u9669 u9670 u9671 u9672 u9673 u9674 u9675 u9676 u9677 u9678 u9679 u9680 u9681 u9682 u9683 u9684 u9685 u9686 u9687 u9688 u9689 u9690 u9691 u9692 u9693 u9694 u9695 u9696 u9697 u9698 u9699 u9700 u9701 u9702 u9703 u9704 u9705 u9706 u9707 u9708 u9709 u9710 u9711 u9712 u9713 u9714 u9715 u9716 u9717 u9718 u9719 u9720 u9721 u9722 u9723 u9724 u9725 u9726 u9727 u9728 u9729 u9730 u9731 u9732 u9733 u9734 u9735 u9736 u9737 u9738 u9739 u9740 u9741 u9742 u9744 u9745 u9746 u9747 u9748 u9749 u9750 u9751 u9752 u9753 u9754 u9756 u9757 u9758 u9760 u9761 u9762 u9763 u9764 u9765 u9766 u9767 u9768 u9769 u9770 u9771 u9772 u9773 u9775 u9776 u9777 u9778 u9779 u9780 u9781 u9782 u9783 u9784 u9785 u9786 u9787 u9788 u9789 u9790 u9791 u9792 u9794 u9795 u9796 u9797 u9799 u9800 u9801 u9802 u9803 u9804 u9805 u9806 u9807 u9808 u9809 u9810 u9811 u9812 u9813 u9814 u9815 u9816 u9817 u9818 u9819 u9820 u9821 u9822 u9823 u9824 u9825 u9826 u9827 u9828 u9829 u9830 u9831 u9832 u9833 u9834 u9835 u9836 u9837 u9838 u9839 u9840 u9841 u9843 u9844 u9845 u9846 u9847 u9848 u9849 u9850 u9851 u9852))
 (define-constant PUBLIC-BATCH-49 (list u9853 u9854 u9855 u9856 u9857 u9858 u9859 u9860 u9861 u9862 u9863 u9864 u9865 u9866 u9867 u9868 u9869 u9870 u9871 u9872 u9873 u9874 u9875 u9876 u9877 u9878 u9879 u9880 u9881 u9882 u9883 u9884 u9885 u9886 u9887 u9888 u9889 u9890 u9891 u9892 u9893 u9894 u9895 u9896 u9897 u9898 u9899 u9900 u9901 u9902 u9903 u9906 u9907 u9908 u9909 u9910 u9912 u9913 u9914 u9915 u9916 u9917 u9918 u9919 u9920 u9922 u9923 u9924 u9925 u9926 u9927 u9928 u9929 u9930 u9931 u9932 u9933 u9934 u9935 u9936 u9937 u9938 u9939 u9940 u9941 u9942 u9943 u9944 u9945 u9946 u9947 u9948 u9949 u9950 u9951 u9952 u9954 u9955 u9956 u9957 u9958 u9959 u9960 u9961 u9962 u9963 u9964 u9965 u9966 u9967 u9968 u9969 u9970 u9971 u9972 u9973 u9974 u9975 u9976 u9977 u9978 u9979 u9980 u9982 u9983 u9984 u9985 u9986 u9987 u9988 u9989 u9990 u9991 u9992 u9993 u9994 u9995 u9996 u9997 u9998 u9999 u10000))
 
-;; Step 4: Mint all non-reserved IDs to MARKETPLACE (custodial-marketplace contract)
+;; Step 4: Mint all non-reserved IDs to MARKETPLACE (froggy-nft-marketplace contract)
 (map-set token-count MARKETPLACE
   (+ (fold mint-marketplace-iter PUBLIC-BATCH-1 u0)
      (fold mint-marketplace-iter PUBLIC-BATCH-2 u0)

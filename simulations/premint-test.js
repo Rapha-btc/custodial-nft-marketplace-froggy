@@ -21,7 +21,7 @@ const BUYER = "SP8D5DYVACKV3XSG3Q7QR48H765RG3FRB9P7S99A"; // Real froggy holder 
 // CONTRACTS
 // ============================================================
 const NFT_CONTRACT = `${DEPLOYER}.froggy-gamma-nft`;
-const MARKETPLACE_CONTRACT = `${DEPLOYER}.custodial-marketplace`;
+const MARKETPLACE_CONTRACT = `${DEPLOYER}.froggy-nft-marketplace`;
 const FROG_FAKTORY = "SP3E8B51MF5E28BD82FM95VDSQ71VK4KFNZX7ZK2R.frog-faktory";
 
 // ============================================================
@@ -68,9 +68,9 @@ async function main() {
     // Requires Clarity 4 for as-contract? syntax
     // ============================================================
     .addContractDeploy({
-      contract_name: "custodial-marketplace",
+      contract_name: "froggy-nft-marketplace",
       source_code: fs.readFileSync(
-        "./contracts/custodial-marketplace.clar",
+        "./contracts/froggy-nft-marketplace.clar",
         "utf8"
       ),
       clarity_version: 4,
@@ -91,7 +91,7 @@ async function main() {
     .addContractCall({
       contract_id: NFT_CONTRACT,
       function_name: "get-balance",
-      function_args: [contractPrincipalCV(DEPLOYER, "custodial-marketplace")],
+      function_args: [contractPrincipalCV(DEPLOYER, "froggy-nft-marketplace")],
     })
 
     // ============================================================
@@ -179,7 +179,7 @@ async function main() {
     .addContractCall({
       contract_id: NFT_CONTRACT,
       function_name: "get-balance",
-      function_args: [contractPrincipalCV(DEPLOYER, "custodial-marketplace")],
+      function_args: [contractPrincipalCV(DEPLOYER, "froggy-nft-marketplace")],
     })
 
     // ============================================================

@@ -90,8 +90,8 @@ plan:
     - id: 2
       transactions:
         - emulated-contract-publish:
-            contract-name: custodial-marketplace
+            contract-name: froggy-nft-marketplace
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: contracts/custodial-marketplace.clar
+            path: contracts/froggy-nft-marketplace.clar
             clarity-version: 4
       epoch: "3.3"

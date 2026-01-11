@@ -13,8 +13,8 @@ contract_id = 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standa
 
 [[project.requirements]]
 contract_id = 'SP3D6PV2ACBPEKYJTCMH7HEN02KP87QSP8KTEH335.commission-trait'
-[contracts.custodial-marketplace]
-path = 'contracts/custodial-marketplace.clar'
+[contracts.froggy-nft-marketplace]
+path = 'contracts/froggy-nft-marketplace.clar'
 clarity_version = 4
 epoch = 3.3
 
