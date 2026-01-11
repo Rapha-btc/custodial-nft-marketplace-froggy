@@ -13,7 +13,6 @@
 (define-constant ERR-NO-MORE-NFTS u100)
 (define-constant ERR-NOT-ENOUGH-PASSES u101)
 (define-constant ERR-PUBLIC-SALE-DISABLED u102)
-(define-constant ERR-CONTRACT-INITIALIZED u103)
 (define-constant ERR-NOT-AUTHORIZED u104)
 (define-constant ERR-INVALID-USER u105)
 (define-constant ERR-LISTING u106)
@@ -24,9 +23,6 @@
 (define-constant ERR-METADATA-FROZEN u111)
 (define-constant ERR-NO-MORE-MINTS u113)
 (define-constant ERR-INVALID-PERCENTAGE u114)
-(define-constant ERR-ALREADY-RESERVED u115)
-(define-constant ERR-NOT-RESERVED u116)
-(define-constant ERR-ALREADY-MINTED u117)
 
 ;; Internal variables
 (define-data-var mint-limit uint u10000)
@@ -44,7 +40,7 @@
 (define-data-var premint-enabled bool false)
 (define-data-var sale-enabled bool false)
 (define-data-var metadata-frozen bool false)
-(define-data-var mint-cap uint u9)
+(define-data-var mint-cap uint u12)
 
 (define-map mints-per-user principal uint)
 (define-map mint-passes principal uint)
@@ -79,10 +75,8 @@
       (last-nft-id (var-get last-id))
       (enabled (asserts! (<= last-nft-id (var-get mint-limit)) (err ERR-NO-MORE-NFTS)))
       (art-addr (var-get artist-address))
-      (mint-result (fold mint-many-iter orders {next-id: last-nft-id, minted: u0}))
-      (id-reached (get next-id mint-result))
-      (actual-minted (get minted mint-result))
-      (price (* (var-get total-price) actual-minted))
+      (id-reached (fold mint-many-iter orders last-nft-id))
+      (price (* (var-get total-price) (- id-reached last-nft-id)))
       (total-commission (/ (* price COMM) u10000))
       (current-balance (get-balance tx-sender))
       (total-artist (- price total-commission))
@@ -95,38 +89,24 @@
     (if (or (is-eq tx-sender art-addr) (is-eq tx-sender DEPLOYER) (is-eq (var-get total-price) u0000000))
       (begin
         (var-set last-id id-reached)
-        (map-set token-count tx-sender (+ current-balance actual-minted))
+        (map-set token-count tx-sender (+ current-balance (- id-reached last-nft-id)))
       )
       (begin
         (var-set last-id id-reached)
-        (map-set token-count tx-sender (+ current-balance actual-minted))
+        (map-set token-count tx-sender (+ current-balance (- id-reached last-nft-id)))
         (try! (stx-transfer? total-artist tx-sender (var-get artist-address)))
         (try! (stx-transfer? total-commission tx-sender COMM-ADDR))
       )
     )
     (ok id-reached)))
 
-;; Helper to skip past any reserved IDs (checks up to 10 consecutive)
-(define-private (find-next-available (start-id uint))
-  (fold skip-reserved-iter (list u0 u1 u2 u3 u4 u5 u6 u7 u8 u9) start-id))
-
-(define-private (skip-reserved-iter (offset uint) (current-id uint))
-  (if (and (<= current-id (var-get mint-limit)) (is-reserved current-id))
-    (+ current-id u1)
-    current-id))
-
-(define-private (mint-many-iter (ignore bool) (state {next-id: uint, minted: uint}))
-  (let
-    (
-      (next-id (get next-id state))
-      (minted (get minted state))
-      (available-id (find-next-available next-id))
+(define-private (mint-many-iter (ignore bool) (next-id uint))
+  (if (<= next-id (var-get mint-limit))
+    (begin
+      (unwrap! (nft-mint? froggy next-id tx-sender) next-id)
+      (+ next-id u1)
     )
-    (if (<= available-id (var-get mint-limit))
-      (begin
-        (unwrap! (nft-mint? froggy available-id tx-sender) state)
-        {next-id: (+ available-id u1), minted: (+ minted u1)})
-      state)))
+    next-id))
 
 (define-public (set-artist-address (address principal))
   (begin

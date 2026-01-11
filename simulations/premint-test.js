@@ -15,7 +15,7 @@ import { SimulationBuilder } from "stxer";
 // ============================================================
 const DEPLOYER = "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22";
 const ARTIST = "SP3E8B51MF5E28BD82FM95VDSQ71VK4KFNZX7ZK2R"; // Receives 90% of premint
-const BUYER = "SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7"; // Random buyer (valid mainnet address)
+const BUYER = "SP8D5DYVACKV3XSG3Q7QR48H765RG3FRB9P7S99A"; // Real froggy holder (has 35.98M froggy)
 
 // ============================================================
 // CONTRACTS
@@ -65,6 +65,7 @@ async function main() {
     // Auto-executes:
     //   - Whitelist frog-faktory FT
     //   - Set default-ft to frog-faktory
+    // Requires Clarity 4 for as-contract? syntax
     // ============================================================
     .addContractDeploy({
       contract_name: "custodial-marketplace",
@@ -72,7 +73,7 @@ async function main() {
         "./contracts/custodial-marketplace.clar",
         "utf8"
       ),
-      clarity_version: ClarityVersion.Clarity3,
+      clarity_version: 4,
     })
 
     // ============================================================
