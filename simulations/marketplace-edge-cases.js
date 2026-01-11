@@ -1,5 +1,5 @@
 // marketplace-edge-cases.js
-// Additional edge case tests for froggy custodial-marketplace contract
+// Additional edge case tests for froggy froggy-nft-marketplace contract
 import fs from "node:fs";
 import {
   ClarityVersion,
@@ -21,7 +21,7 @@ const RANDOM_USER = "SP2C7BCAP2NH3EYWCCVHJ6K0DMZBXDFKQ56KR7QN2";
 // ============================================================
 // CONTRACTS
 // ============================================================
-const MARKETPLACE = `${DEPLOYER}.custodial-marketplace`;
+const MARKETPLACE = `${DEPLOYER}.froggy-nft-marketplace`;
 const FROGGY_NFT = `${DEPLOYER}.froggy-gamma-nft`;
 
 // Wrong NFT - not the initialized one
@@ -121,9 +121,9 @@ async function main() {
     // Deploy marketplace contract
     // ============================================================
     .addContractDeploy({
-      contract_name: "custodial-marketplace",
+      contract_name: "froggy-nft-marketplace",
       source_code: fs.readFileSync(
-        "./contracts/custodial-marketplace.clar",
+        "./contracts/froggy-nft-marketplace.clar",
         "utf8"
       ),
       clarity_version: ClarityVersion.Clarity4,

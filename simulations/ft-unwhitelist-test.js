@@ -20,7 +20,7 @@ const BUYER = "SP1NPDHF9CQ8B9Q045CCQS1MR9M9SGJ5TT6WFFCD2";
 // ============================================================
 // CONTRACTS
 // ============================================================
-const MARKETPLACE = `${DEPLOYER}.custodial-marketplace`;
+const MARKETPLACE = `${DEPLOYER}.froggy-nft-marketplace`;
 const FROGGY_NFT = `${DEPLOYER}.froggy-gamma-nft`;
 const PAYMENT_TOKEN = "SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275.tokensoft-token-v4k68639zxz";
 
@@ -52,9 +52,9 @@ async function main() {
     // Step 1: Deploy marketplace contract
     // ============================================================
     .addContractDeploy({
-      contract_name: "custodial-marketplace",
+      contract_name: "froggy-nft-marketplace",
       source_code: fs.readFileSync(
-        "./contracts/custodial-marketplace.clar",
+        "./contracts/froggy-nft-marketplace.clar",
         "utf8"
       ),
       clarity_version: ClarityVersion.Clarity4,
