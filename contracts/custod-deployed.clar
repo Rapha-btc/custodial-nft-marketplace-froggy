@@ -17,18 +17,12 @@
 (define-constant ERR-WRONG-FT (err u211))
 
 (define-data-var contract-paused bool false)
-(define-data-var royalty-percent uint u250)
+(define-data-var royalty-percent uint u250) 
 (define-data-var royalty-recipient principal CONTRACT-OWNER)
-(define-data-var platform-fee uint u250)
+(define-data-var platform-fee uint u250) 
 (define-data-var platform-recipient principal CONTRACT-OWNER)
 
 (define-data-var allowed-nft (optional principal) none)
-
-;; Default listing settings for NFTs minted directly to marketplace
-;; These act as "pre-listed" NFTs that can be purchased without explicit listing
-(define-data-var default-price uint u100000000000000) ;; 100k froggy
-(define-data-var default-seller principal 'SP3E8B51MF5E28BD82FM95VDSQ71VK4KFNZX7ZK2R) ;; Artist receives payment
-(define-data-var default-ft (optional principal) none) ;; Set after whitelisting an FT
 
 (define-map whitelisted-fts principal bool)
 
@@ -89,30 +83,6 @@
     (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
     (var-set platform-recipient recipient)
     (print {event: "platform-recipient-updated", recipient: recipient})
-    (ok true)))
-
-;; Default listing admin functions
-(define-public (set-default-price (price uint))
-  (begin
-    (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
-    (asserts! (> price u0) ERR-INVALID-PRICE)
-    (var-set default-price price)
-    (print {event: "default-price-updated", price: price})
-    (ok true)))
-
-(define-public (set-default-seller (seller principal))
-  (begin
-    (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
-    (var-set default-seller seller)
-    (print {event: "default-seller-updated", seller: seller})
-    (ok true)))
-
-(define-public (set-default-ft (ft <ft-trait>))
-  (begin
-    (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
-    (asserts! (is-ft-whitelisted (contract-of ft)) ERR-FT-NOT-WHITELISTED)
-    (var-set default-ft (some (contract-of ft)))
-    (print {event: "default-ft-updated", ft-contract: (contract-of ft)})
     (ok true)))
 
 (define-private (check-nft-allowed (nft-contract <nft-trait>))
@@ -248,48 +218,6 @@
     })
     (ok true)))
 
-;; Buy NFT using default listing (for NFTs minted directly to marketplace without explicit listing)
-(define-public (premint (token-id uint) (nft-contract <nft-trait>) (ft-contract <ft-trait>))
-  (let (
-    (buyer tx-sender)
-    (seller (var-get default-seller))
-    (price (var-get default-price))
-    (expected-ft (unwrap! (var-get default-ft) ERR-NOT-INITIALIZED))
-    (platform-amount (/ (* price u1000) u10000))
-    (seller-amount (- price platform-amount))
-  )
-    (asserts! (check-nft-allowed nft-contract) ERR-WRONG-NFT)
-    (asserts! (not (var-get contract-paused)) ERR-PAUSED)
-    (asserts! (is-eq (contract-of ft-contract) expected-ft) ERR-WRONG-FT)
-    (asserts! (is-ft-whitelisted expected-ft) ERR-FT-NOT-WHITELISTED)
-    (asserts! (not (is-eq buyer seller)) ERR-CANNOT-BUY-OWN)
-    ;; Ensure no explicit listing exists (this is for default/pre-listed NFTs only)
-    (asserts! (is-none (map-get? listings token-id)) ERR-ALREADY-LISTED)
-
-    ;; Transfer payment to seller (artist)
-    (try! (contract-call? ft-contract transfer seller-amount buyer seller none))
-
-    ;; Transfer platform fee
-    (if (> platform-amount u0)
-      (try! (contract-call? ft-contract transfer platform-amount buyer (var-get platform-recipient) none))
-      true
-    )
-
-    ;; Transfer NFT from marketplace to buyer
-    (try! (as-contract? ((with-nft (contract-of nft-contract) "*" (list token-id)))
-      (try! (contract-call? nft-contract transfer token-id current-contract buyer))))
-
-    (print {
-      event: "premint-nft-sold",
-      token-id: token-id,
-      seller: seller,
-      buyer: buyer,
-      price: price,
-      ft-contract: expected-ft,
-      platform-fee-paid: platform-amount
-    })
-    (ok true)))
-
 (define-public (admin-emergency-return (token-id uint) (nft-contract <nft-trait>))
   (let (
     (listing (unwrap! (map-get? listings token-id) ERR-NOT-LISTED))
@@ -332,16 +260,3 @@
 
 (define-read-only (is-initialized)
   (is-some (var-get allowed-nft)))
-
-;; Default listing read-only functions
-(define-read-only (get-default-listing-info)
-  {
-    price: (var-get default-price),
-    seller: (var-get default-seller),
-    ft-contract: (var-get default-ft)
-  })
-
-;; ========== EXECUTE ON DEPLOYMENT ==========
-;; Whitelist frog-faktory FT and set as default payment token
-(map-set whitelisted-fts 'SP3E8B51MF5E28BD82FM95VDSQ71VK4KFNZX7ZK2R.frog-faktory true)
-(var-set default-ft (some 'SP3E8B51MF5E28BD82FM95VDSQ71VK4KFNZX7ZK2R.frog-faktory))
