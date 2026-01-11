@@ -27,7 +27,7 @@
 ;; 50% secondary only
 (define-data-var royalty-address-1 principal 'SP3ANWNWTHJAH4E1WNQ9RT7V07ERJN5S4DA7X6XEW)
 
-(define-data-var ipfs-root (string-ascii 80) "ipfs://ipfs/QmRNSQYjHXoohquaPbmc6DFH6kmc3s3rgMsNpUBvgojEpE/json/")
+(define-data-var ipfs-root (string-ascii 80) "https://froggy.wtf/api/froggy/")
 (define-data-var metadata-frozen bool false)
 
 (define-map reserved-ids uint bool)
