@@ -26,7 +26,7 @@
 
 ;; Default listing settings for NFTs minted directly to marketplace
 ;; These act as "pre-listed" NFTs that can be purchased without explicit listing
-(define-data-var default-price uint u100000000000000) ;; 100k froggy
+(define-data-var default-price uint u100000000000) ;; 100k froggy (6 decimals)
 (define-data-var default-seller principal 'SP3E8B51MF5E28BD82FM95VDSQ71VK4KFNZX7ZK2R) ;; Artist receives payment
 (define-data-var default-ft (optional principal) none) ;; Set after whitelisting an FT
 

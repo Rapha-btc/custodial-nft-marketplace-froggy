@@ -7,6 +7,7 @@ import {
   principalCV,
   contractPrincipalCV,
   boolCV,
+  noneCV,
 } from "@stacks/transactions";
 import { SimulationBuilder } from "stxer";
 
@@ -15,7 +16,8 @@ import { SimulationBuilder } from "stxer";
 // ============================================================
 const DEPLOYER = "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22";
 const ARTIST = "SP3E8B51MF5E28BD82FM95VDSQ71VK4KFNZX7ZK2R"; // Receives 90% of premint
-const BUYER = "SP8D5DYVACKV3XSG3Q7QR48H765RG3FRB9P7S99A"; // Real froggy holder (has 35.98M froggy)
+const BUYER = "SP8D5DYVACKV3XSG3Q7QR48H765RG3FRB9P7S99A";
+const FROG_WHALE = "SP2FPQSPBEGJTNJV99XHSS82QXWWHSRFN0AEVZBVH"; // Has 35M froggy tokens
 
 // ============================================================
 // CONTRACTS
@@ -32,14 +34,18 @@ const PREMINT_PRICE = 100000000000000n; // 100k froggy tokens
 async function main() {
   console.log("=== PREMINT TEST ===\n");
   console.log("Flow:");
-  console.log("1. Deploy NFT contract (mints 258 reserved to ARTIST, 9742 to marketplace)");
+  console.log(
+    "1. Deploy NFT contract (mints 258 reserved to ARTIST, 9742 to marketplace)"
+  );
   console.log("2. Deploy Marketplace (auto-whitelists frog-faktory)");
   console.log("3. Initialize marketplace with NFT contract");
   console.log("4. Verify marketplace owns non-reserved NFTs");
   console.log("5. Verify artist owns reserved NFTs");
-  console.log("6. Buyer premints NFT #2 (non-reserved) for 100k froggy");
-  console.log("7. Verify buyer now owns NFT #2");
-  console.log("8. Verify artist received 90% payment");
+  console.log("6. Fund buyer with 500k froggy from whale");
+  console.log("7. Buyer premints NFT #2 (non-reserved) for 100k froggy");
+  console.log("8. Verify buyer now owns NFT #2");
+  console.log("9. Buyer premints NFT #3");
+  console.log("10. Verify buyer owns 2 NFTs");
   console.log("\n");
 
   SimulationBuilder.new()
@@ -53,10 +59,7 @@ async function main() {
     .withSender(DEPLOYER)
     .addContractDeploy({
       contract_name: "froggy-gamma-nft",
-      source_code: fs.readFileSync(
-        "./contracts/froggy-gamma-nft.clar",
-        "utf8"
-      ),
+      source_code: fs.readFileSync("./contracts/froggy-gamma-nft.clar", "utf8"),
       clarity_version: ClarityVersion.Clarity3,
     })
 
@@ -127,7 +130,12 @@ async function main() {
     .addContractCall({
       contract_id: MARKETPLACE_CONTRACT,
       function_name: "is-ft-whitelisted",
-      function_args: [contractPrincipalCV("SP3E8B51MF5E28BD82FM95VDSQ71VK4KFNZX7ZK2R", "frog-faktory")],
+      function_args: [
+        contractPrincipalCV(
+          "SP3E8B51MF5E28BD82FM95VDSQ71VK4KFNZX7ZK2R",
+          "frog-faktory"
+        ),
+      ],
     })
 
     // ============================================================
@@ -141,7 +149,33 @@ async function main() {
     })
 
     // ============================================================
-    // Step 10: Buyer premints NFT #2
+    // Step 10: Check whale's froggy balance
+    // ============================================================
+    .addContractCall({
+      contract_id: FROG_FAKTORY,
+      function_name: "get-balance",
+      function_args: [principalCV(FROG_WHALE)],
+    })
+
+    // ============================================================
+    // Step 11: Fund buyer with froggy tokens from whale
+    // Transfer 500k froggy (enough for multiple premints)
+    // Note: froggy has 6 decimals, so 500k = 500_000_000_000
+    // ============================================================
+    .withSender(FROG_WHALE)
+    .addContractCall({
+      contract_id: FROG_FAKTORY,
+      function_name: "transfer",
+      function_args: [
+        uintCV(500_000_000_000n), // 500k froggy (6 decimals: 500000 * 10^6)
+        principalCV(FROG_WHALE), // sender
+        principalCV(BUYER), // recipient
+        noneCV(), // memo
+      ],
+    })
+
+    // ============================================================
+    // Step 12: Buyer premints NFT #2
     // Pays 100k froggy: 90k to artist, 10k platform fee
     // ============================================================
     .withSender(BUYER)
@@ -151,12 +185,15 @@ async function main() {
       function_args: [
         uintCV(2), // token-id
         contractPrincipalCV(DEPLOYER, "froggy-gamma-nft"), // nft-contract
-        contractPrincipalCV("SP3E8B51MF5E28BD82FM95VDSQ71VK4KFNZX7ZK2R", "frog-faktory"), // ft-contract
+        contractPrincipalCV(
+          "SP3E8B51MF5E28BD82FM95VDSQ71VK4KFNZX7ZK2R",
+          "frog-faktory"
+        ), // ft-contract
       ],
     })
 
     // ============================================================
-    // Step 11: Verify buyer now owns NFT #2
+    // Step 13: Verify buyer now owns NFT #2
     // ============================================================
     .addContractCall({
       contract_id: NFT_CONTRACT,
@@ -165,7 +202,7 @@ async function main() {
     })
 
     // ============================================================
-    // Step 12: Check buyer's NFT balance (should be 1)
+    // Step 14: Check buyer's NFT balance (should be 1)
     // ============================================================
     .addContractCall({
       contract_id: NFT_CONTRACT,
@@ -174,7 +211,7 @@ async function main() {
     })
 
     // ============================================================
-    // Step 13: Check marketplace balance (should be 9741 now)
+    // Step 15: Check marketplace balance (should be 9741 now)
     // ============================================================
     .addContractCall({
       contract_id: NFT_CONTRACT,
@@ -183,7 +220,7 @@ async function main() {
     })
 
     // ============================================================
-    // Step 14: Buyer premints another NFT #3
+    // Step 16: Buyer premints another NFT #3
     // ============================================================
     .addContractCall({
       contract_id: MARKETPLACE_CONTRACT,
@@ -191,12 +228,15 @@ async function main() {
       function_args: [
         uintCV(3), // token-id
         contractPrincipalCV(DEPLOYER, "froggy-gamma-nft"),
-        contractPrincipalCV("SP3E8B51MF5E28BD82FM95VDSQ71VK4KFNZX7ZK2R", "frog-faktory"),
+        contractPrincipalCV(
+          "SP3E8B51MF5E28BD82FM95VDSQ71VK4KFNZX7ZK2R",
+          "frog-faktory"
+        ),
       ],
     })
 
     // ============================================================
-    // Step 15: Check buyer's final NFT balance (should be 2)
+    // Step 17: Check buyer's final NFT balance (should be 2)
     // ============================================================
     .addContractCall({
       contract_id: NFT_CONTRACT,
