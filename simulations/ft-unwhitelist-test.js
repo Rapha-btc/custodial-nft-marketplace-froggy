@@ -7,6 +7,7 @@ import {
   principalCV,
   contractPrincipalCV,
   boolCV,
+  noneCV,
 } from "@stacks/transactions";
 import { SimulationBuilder } from "stxer";
 
@@ -14,17 +15,21 @@ import { SimulationBuilder } from "stxer";
 // PRINCIPALS
 // ============================================================
 const DEPLOYER = "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22";
-const SELLER = "SPV00QHST52GD7D0SEWV3R5N04RD4Q1PMA3TE2MP";
-const BUYER = "SP1NPDHF9CQ8B9Q045CCQS1MR9M9SGJ5TT6WFFCD2";
+const ARTIST = "SP3E8B51MF5E28BD82FM95VDSQ71VK4KFNZX7ZK2R"; // Owns reserved NFTs
+const SELLER = ARTIST; // Artist is the seller for reserved NFTs
+const BUYER = "SP8D5DYVACKV3XSG3Q7QR48H765RG3FRB9P7S99A";
+const FROG_WHALE = "SP2FPQSPBEGJTNJV99XHSS82QXWWHSRFN0AEVZBVH"; // Has 35M froggy tokens
 
 // ============================================================
 // CONTRACTS
 // ============================================================
 const MARKETPLACE = `${DEPLOYER}.froggy-nft-marketplace`;
 const FROGGY_NFT = `${DEPLOYER}.froggy-gamma-nft`;
-const PAYMENT_TOKEN = "SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275.tokensoft-token-v4k68639zxz";
+const FROG_FAKTORY = "SP3E8B51MF5E28BD82FM95VDSQ71VK4KFNZX7ZK2R.frog-faktory";
 
-const PRICE_10M = 10000000000;
+// Prices (frog-faktory has 6 decimals)
+const PRICE_10K = 10_000_000_000n; // 10k froggy
+const BUYER_FUNDING = 100_000_000_000n; // 100k froggy for buyer
 
 async function main() {
   console.log("=== FT UN-WHITELIST TEST ===\n");
@@ -50,6 +55,7 @@ async function main() {
 
     // ============================================================
     // Step 1: Deploy marketplace contract
+    // (frog-faktory auto-whitelisted on deployment)
     // ============================================================
     .addContractDeploy({
       contract_name: "froggy-nft-marketplace",
@@ -57,7 +63,7 @@ async function main() {
         "./contracts/froggy-nft-marketplace.clar",
         "utf8"
       ),
-      clarity_version: ClarityVersion.Clarity4,
+      clarity_version: 4,
     })
 
     // ============================================================
@@ -66,28 +72,26 @@ async function main() {
     .addContractCall({
       contract_id: MARKETPLACE,
       function_name: "initialize",
-      function_args: [
-        principalCV(FROGGY_NFT),
-      ],
+      function_args: [principalCV(FROGGY_NFT)],
     })
 
     // ============================================================
-    // Step 3: Whitelist payment token
+    // Step 3: Fund buyer with froggy tokens from whale
     // ============================================================
+    .withSender(FROG_WHALE)
     .addContractCall({
-      contract_id: MARKETPLACE,
-      function_name: "whitelist-ft",
+      contract_id: FROG_FAKTORY,
+      function_name: "transfer",
       function_args: [
-        contractPrincipalCV(
-          "SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275",
-          "tokensoft-token-v4k68639zxz"
-        ),
-        boolCV(true),
+        uintCV(BUYER_FUNDING),
+        principalCV(FROG_WHALE),
+        principalCV(BUYER),
+        noneCV(),
       ],
     })
 
     // ============================================================
-    // Step 4: Seller lists NFT #1
+    // Step 4: Seller lists NFT #1 (reserved, owned by Artist)
     // Expected: (ok true)
     // ============================================================
     .withSender(SELLER)
@@ -96,20 +100,17 @@ async function main() {
       function_name: "list-nft",
       function_args: [
         uintCV(1),
+        contractPrincipalCV(DEPLOYER, "froggy-gamma-nft"),
         contractPrincipalCV(
-          DEPLOYER,
-          "froggy-gamma-nft"
+          "SP3E8B51MF5E28BD82FM95VDSQ71VK4KFNZX7ZK2R",
+          "frog-faktory"
         ),
-        contractPrincipalCV(
-          "SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275",
-          "tokensoft-token-v4k68639zxz"
-        ),
-        uintCV(PRICE_10M),
+        uintCV(PRICE_10K),
       ],
     })
 
     // ============================================================
-    // Step 5: Admin UN-WHITELISTS the payment token
+    // Step 5: Admin UN-WHITELISTS frog-faktory
     // Expected: (ok true)
     // ============================================================
     .withSender(DEPLOYER)
@@ -118,8 +119,8 @@ async function main() {
       function_name: "whitelist-ft",
       function_args: [
         contractPrincipalCV(
-          "SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275",
-          "tokensoft-token-v4k68639zxz"
+          "SP3E8B51MF5E28BD82FM95VDSQ71VK4KFNZX7ZK2R",
+          "frog-faktory"
         ),
         boolCV(false), // UN-WHITELIST!
       ],
@@ -135,13 +136,10 @@ async function main() {
       function_name: "buy-nft",
       function_args: [
         uintCV(1),
+        contractPrincipalCV(DEPLOYER, "froggy-gamma-nft"),
         contractPrincipalCV(
-          DEPLOYER,
-          "froggy-gamma-nft"
-        ),
-        contractPrincipalCV(
-          "SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275",
-          "tokensoft-token-v4k68639zxz"
+          "SP3E8B51MF5E28BD82FM95VDSQ71VK4KFNZX7ZK2R",
+          "frog-faktory"
         ),
       ],
     })
@@ -156,15 +154,12 @@ async function main() {
       function_name: "unlist-nft",
       function_args: [
         uintCV(1),
-        contractPrincipalCV(
-          DEPLOYER,
-          "froggy-gamma-nft"
-        ),
+        contractPrincipalCV(DEPLOYER, "froggy-gamma-nft"),
       ],
     })
 
     // ============================================================
-    // Step 8: Admin RE-WHITELISTS the payment token
+    // Step 8: Admin RE-WHITELISTS frog-faktory
     // Expected: (ok true)
     // ============================================================
     .withSender(DEPLOYER)
@@ -173,8 +168,8 @@ async function main() {
       function_name: "whitelist-ft",
       function_args: [
         contractPrincipalCV(
-          "SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275",
-          "tokensoft-token-v4k68639zxz"
+          "SP3E8B51MF5E28BD82FM95VDSQ71VK4KFNZX7ZK2R",
+          "frog-faktory"
         ),
         boolCV(true), // RE-WHITELIST
       ],
@@ -190,15 +185,12 @@ async function main() {
       function_name: "list-nft",
       function_args: [
         uintCV(1),
+        contractPrincipalCV(DEPLOYER, "froggy-gamma-nft"),
         contractPrincipalCV(
-          DEPLOYER,
-          "froggy-gamma-nft"
+          "SP3E8B51MF5E28BD82FM95VDSQ71VK4KFNZX7ZK2R",
+          "frog-faktory"
         ),
-        contractPrincipalCV(
-          "SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275",
-          "tokensoft-token-v4k68639zxz"
-        ),
-        uintCV(PRICE_10M),
+        uintCV(PRICE_10K),
       ],
     })
 
@@ -212,13 +204,10 @@ async function main() {
       function_name: "buy-nft",
       function_args: [
         uintCV(1),
+        contractPrincipalCV(DEPLOYER, "froggy-gamma-nft"),
         contractPrincipalCV(
-          DEPLOYER,
-          "froggy-gamma-nft"
-        ),
-        contractPrincipalCV(
-          "SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275",
-          "tokensoft-token-v4k68639zxz"
+          "SP3E8B51MF5E28BD82FM95VDSQ71VK4KFNZX7ZK2R",
+          "frog-faktory"
         ),
       ],
     })
@@ -234,8 +223,8 @@ async function main() {
       function_name: "whitelist-ft",
       function_args: [
         contractPrincipalCV(
-          "SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275",
-          "tokensoft-token-v4k68639zxz"
+          "SP3E8B51MF5E28BD82FM95VDSQ71VK4KFNZX7ZK2R",
+          "frog-faktory"
         ),
         boolCV(false),
       ],
@@ -248,16 +237,13 @@ async function main() {
       contract_id: MARKETPLACE,
       function_name: "list-nft",
       function_args: [
-        uintCV(2), // Different NFT
+        uintCV(5), // Reserved ID #5
+        contractPrincipalCV(DEPLOYER, "froggy-gamma-nft"),
         contractPrincipalCV(
-          DEPLOYER,
-          "froggy-gamma-nft"
+          "SP3E8B51MF5E28BD82FM95VDSQ71VK4KFNZX7ZK2R",
+          "frog-faktory"
         ),
-        contractPrincipalCV(
-          "SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275",
-          "tokensoft-token-v4k68639zxz"
-        ),
-        uintCV(PRICE_10M),
+        uintCV(PRICE_10K),
       ],
     })
 

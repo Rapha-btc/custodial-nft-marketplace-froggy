@@ -23,7 +23,10 @@ import { SimulationBuilder } from "stxer";
 const DEPLOYER = "SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22";
 const ARTIST = "SP3E8B51MF5E28BD82FM95VDSQ71VK4KFNZX7ZK2R";
 
-// Froggy holder - has 35.98M froggy tokens
+// Frog whale - has 35M froggy tokens
+const FROG_WHALE = "SP2FPQSPBEGJTNJV99XHSS82QXWWHSRFN0AEVZBVH";
+
+// Froggy holder - will receive froggy to premint
 const FROGGY_HOLDER = "SP8D5DYVACKV3XSG3Q7QR48H765RG3FRB9P7S99A";
 
 // STX holder - has 5k STX, will receive froggy to premint, then list on gamma
@@ -45,7 +48,7 @@ const COMMISSION_CONTRACT = "SPNWZ5V2TPWGQGVDR6T7B6RQ4XMGZ4PXTEE0VQ0S.gamma-comm
 // ============================================================
 // PRICES
 // ============================================================
-const PREMINT_PRICE = 100000000000000n; // 100k froggy tokens
+const PREMINT_PRICE = 100_000_000_000n; // 100k froggy tokens (6 decimals)
 const GAMMA_LIST_PRICE = 1000000n; // 1 STX (in microSTX)
 
 async function main() {
@@ -97,7 +100,22 @@ async function main() {
     })
 
     // ============================================================
-    // Step 4: Froggy holder premints NFT #2
+    // Step 4: Whale funds FROGGY_HOLDER with 200k froggy
+    // ============================================================
+    .withSender(FROG_WHALE)
+    .addContractCall({
+      contract_id: FROG_FAKTORY,
+      function_name: "transfer",
+      function_args: [
+        uintCV(200_000_000_000n), // 200k froggy
+        principalCV(FROG_WHALE),
+        principalCV(FROGGY_HOLDER),
+        noneCV(),
+      ],
+    })
+
+    // ============================================================
+    // Step 5: Froggy holder premints NFT #2
     // ============================================================
     .withSender(FROGGY_HOLDER)
     .addContractCall({
@@ -111,7 +129,7 @@ async function main() {
     })
 
     // ============================================================
-    // Step 5: Froggy holder transfers 100k froggy to STX holder
+    // Step 6: Froggy holder transfers 100k froggy to STX holder
     // ============================================================
     .addContractCall({
       contract_id: FROG_FAKTORY,
@@ -125,7 +143,7 @@ async function main() {
     })
 
     // ============================================================
-    // Step 6: STX holder premints NFT #3
+    // Step 7: STX holder premints NFT #3
     // ============================================================
     .withSender(STX_HOLDER)
     .addContractCall({
@@ -139,7 +157,7 @@ async function main() {
     })
 
     // ============================================================
-    // Step 7: Verify STX holder owns NFT #3
+    // Step 8: Verify STX holder owns NFT #3
     // ============================================================
     .addContractCall({
       contract_id: NFT_CONTRACT,
@@ -148,7 +166,7 @@ async function main() {
     })
 
     // ============================================================
-    // Step 8: STX holder lists NFT #3 on gamma marketplace at 1 STX
+    // Step 9: STX holder lists NFT #3 on gamma marketplace at 1 STX
     // Uses list-in-ustx from froggy-gamma-nft (non-custodial)
     // ============================================================
     .addContractCall({
@@ -162,7 +180,7 @@ async function main() {
     })
 
     // ============================================================
-    // Step 9: Verify listing exists
+    // Step 10: Verify listing exists
     // ============================================================
     .addContractCall({
       contract_id: NFT_CONTRACT,
@@ -171,7 +189,7 @@ async function main() {
     })
 
     // ============================================================
-    // Step 10: Buyer purchases NFT #3 from gamma marketplace
+    // Step 11: Buyer purchases NFT #3 from gamma marketplace
     // ============================================================
     .withSender(BUYER)
     .addContractCall({
@@ -184,7 +202,7 @@ async function main() {
     })
 
     // ============================================================
-    // Step 11: Verify buyer now owns NFT #3
+    // Step 12: Verify buyer now owns NFT #3
     // ============================================================
     .addContractCall({
       contract_id: NFT_CONTRACT,
@@ -193,18 +211,13 @@ async function main() {
     })
 
     // ============================================================
-    // Step 12: Verify listing is deleted
+    // Step 13: Verify listing is deleted
     // ============================================================
     .addContractCall({
       contract_id: NFT_CONTRACT,
       function_name: "get-listing-in-ustx",
       function_args: [uintCV(3)],
     })
-
-    // ============================================================
-    // Step 13: Check STX holder received payment (minus royalties)
-    // The STX holder should have received ~0.9 STX (after royalties)
-    // ============================================================
 
     .run()
     .catch(console.error);
