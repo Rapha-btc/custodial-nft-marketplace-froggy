@@ -25,13 +25,19 @@ These simulation files test the froggy-marketplace contracts using [stxer](https
 |------|---------|
 | `reserved-ids-test.js` | Tests that reserved IDs are correctly marked and minted to Artist on deployment |
 
-### Marketplace Tests
+### Marketplace Tests (froggy-nft-marketplace - custodial)
 
 | File | Purpose |
 |------|---------|
 | `marketplace-test.js` | Comprehensive marketplace tests: list, buy, unlist, price updates |
 | `marketplace-edge-cases.js` | Edge cases: wrong NFT contract, wrong FT, buying own listing, etc. |
 | `ft-unwhitelist-test.js` | Tests FT un-whitelist behavior: buys blocked but unlist still works |
+
+### Gamma Tests (froggy-gamma-nft - non-custodial STX marketplace)
+
+| File | Purpose |
+|------|---------|
+| `gamma-marketplace-test.js` | Tests gamma marketplace: premint NFT, list-in-ustx, buy-in-ustx with royalties |
 
 ## Running Simulations
 
@@ -45,11 +51,13 @@ node simulations/premint-test.js
 
 ## Key Principals (Mainnet)
 
-| Role | Address |
-|------|---------|
-| Deployer | `SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22` |
-| Artist | `SP3E8B51MF5E28BD82FM95VDSQ71VK4KFNZX7ZK2R` |
-| Buyer (test) | `SP8D5DYVACKV3XSG3Q7QR48H765RG3FRB9P7S99A` (has 35.98M froggy) |
+| Role | Address | Balance |
+|------|---------|---------|
+| Deployer | `SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22` | - |
+| Artist | `SP3E8B51MF5E28BD82FM95VDSQ71VK4KFNZX7ZK2R` | - |
+| Froggy Holder | `SP8D5DYVACKV3XSG3Q7QR48H765RG3FRB9P7S99A` | 35.98M froggy |
+| STX Holder | `SPZSQNQF9SM88N00K4XYV05ZAZRACC748T78P5P3` | 5k STX |
+| STX Buyer | `SPV00QHST52GD7D0SEWV3R5N04RD4Q1PMA3TE2MP` | 7 STX |
 
 ## Premint Pricing
 
