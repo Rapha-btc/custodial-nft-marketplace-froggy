@@ -305,9 +305,43 @@ Tests FT whitelist/un-whitelist behavior: buy blocked when un-whitelisted, selle
 
 ---
 
-## Simulation 7: [PENDING]
+## Simulation 7: Gamma Marketplace Test (Non-Custodial STX)
 
-**Simulation ID:** `TBD`
-**Link:** TBD
+**Simulation ID:** `3cb704f86eebfa5323a63258d3b18335`
+**Link:** https://stxer.xyz/simulations/mainnet/3cb704f86eebfa5323a63258d3b18335
+
+### Description
+Tests the gamma marketplace (non-custodial STX marketplace) built into froggy-gamma-nft. Flow: premint NFT with froggy tokens, list on gamma marketplace in STX, buy with STX.
+
+### Flow Results
+
+| Step | Action | Output |
+|------|--------|--------|
+| 3 | Initialize marketplace | `(ok true)` |
+| 4 | Whale funds FROGGY_HOLDER 200k froggy | `(ok true)` |
+| 5 | FROGGY_HOLDER premints NFT #2 | `(ok true)` |
+| 6 | Transfer 100k froggy to STX_HOLDER | `(ok true)` |
+| 7 | STX_HOLDER premints NFT #3 | `(ok true)` |
+| 8 | Verify STX_HOLDER owns NFT #3 | `(ok (some STX_HOLDER))` |
+| 9 | List NFT #3 on gamma @ 1 STX | `(ok true)` |
+| 10 | Verify listing exists | `(some {price: u1000000, royalty: u500})` |
+| 11 | Buyer purchases NFT #3 | `(ok true)` |
+| 12 | Verify buyer owns NFT #3 | `(ok (some BUYER))` |
+| 13 | Verify listing deleted | `none` |
+
+### Payment Distribution (Step 11 - 1 STX sale)
+
+| Recipient | Amount | Purpose |
+|-----------|--------|---------|
+| Seller (STX_HOLDER) | 1,000,000 uSTX | Sale price |
+| Artist | 25,000 uSTX | 2.5% royalty |
+| Platform | 25,000 uSTX | 2.5% platform fee |
+| Gamma Commission | 35,000 uSTX | 3.5% gamma fee |
+
+### Key Findings
+- **Premint with froggy**: Users can premint NFTs from froggy-nft-marketplace using $FROGGY
+- **List on gamma**: NFT owners can list on gamma marketplace (non-custodial) in STX
+- **Buy with STX**: Buyers pay in STX with automatic royalty/fee distribution
+- **Listing cleanup**: Listing is automatically deleted after purchase
 
 ---
